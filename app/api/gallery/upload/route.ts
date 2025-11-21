@@ -12,68 +12,55 @@ export async function POST(req) {
     const title = formData.get("title");
     const authorId = Number(formData.get("authorId") || 1);
 
-    if (!file)
-        return NextResponse.json({ error: "Keine Datei hochgeladen." });
+    if (!file) return NextResponse.json({ error: "Keine Datei hochgeladen." });
 
     // Datei lesen
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Dateiendung erkennen
     const originalName = file.name.toLowerCase();
-    const extension = originalName.split(".").pop();
+    const ext = originalName.split(".").pop();
 
-    // Ziel-Verzeichnis
     const uploadsDir = "public/uploads";
-    if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-    // Dateiname
-    const filename = `${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}.jpg`;
-
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const filepath = `${uploadsDir}/${filename}`;
 
-    // Sharp Pipeline
-    let sharpInstance = sharp(buffer);
+    const videoFormats = ["mp4", "mov", "webm", "mkv", "avi", "m4v"];
 
-    // HEIC / HEIF → JPG
-    if (extension === "heic" || extension === "heif") {
-        sharpInstance = sharpInstance.toFormat("jpeg");
+    // 🔥 VIDEO UPLOAD
+    if (videoFormats.includes(ext)) {
+        await fs.promises.writeFile(filepath, buffer);
+
+        const media = await prisma.galleryMedia.create({
+            data: {
+                title,
+                url: `/uploads/${filename}`,
+                type: "video",
+                authorId
+            }
+        });
+
+        return NextResponse.json({ success: true, media });
     }
 
-    // Bild auf max. 1920px Breite verkleinern (falls größer)
-    const resized = await sharpInstance
-        .resize({
-            width: 1920, // maximale Breite
-            withoutEnlargement: true, // Bild nicht vergrößern, wenn kleiner
-        })
-        .jpeg({
-            quality: 85, // 80–85% = gute Webqualität
-            chromaSubsampling: "4:4:4",
-        })
+    // 🔥 BILD-UPLOAD (wie vorher)
+    const resized = await sharp(buffer)
+        .resize({ width: 1920, withoutEnlargement: true })
+        .jpeg({ quality: 85 })
         .toBuffer();
 
-    // Datei speichern
-    await fs.promises.writeFile(filepath, resized);
+    await fs.promises.writeFile(filepath.replace(`.${ext}`, ".jpg"), resized);
 
-    // Öffentliche URL
-    const url = `/uploads/${filename}`;
-
-    // DB Eintrag
-    const dbImage = await prisma.galleryImage.create({
+    const image = await prisma.galleryMedia.create({
         data: {
             title,
-            url,
-            authorId,
-        },
+            url: `/uploads/${filename.replace(ext, "jpg")}`,
+            type: "image",
+            authorId
+        }
     });
 
-    return NextResponse.json({
-        success: true,
-        url,
-        image: dbImage,
-    });
+    return NextResponse.json({ success: true, media: image });
 }
