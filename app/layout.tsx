@@ -10,6 +10,7 @@ export default function RootLayout({ children }) {
         <html lang="de">
             <body className="bg-[#08090F] text-white antialiased">
                 {children}
+                <Footer />
             </body>
         </html>
     );
