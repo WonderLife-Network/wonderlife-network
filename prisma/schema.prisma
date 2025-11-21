@@ -28,11 +28,13 @@ model ForumReply {
   author    User      @relation(fields: [authorId], references: [id])
 }
 
-model GalleryImage {
+model GalleryMedia {
   id        Int      @id @default(autoincrement())
   title     String
   url       String
+  type      String   // "image" oder "video"
   authorId  Int
   createdAt DateTime @default(now())
   author    User     @relation(fields: [authorId], references: [id])
 }
+
