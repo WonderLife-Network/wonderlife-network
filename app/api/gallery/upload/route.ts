@@ -1,66 +1,88 @@
-export const runtime = "nodejs";
+"use client";
 
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import sharp from "sharp";
-import fs from "fs";
+import { useEffect, useState } from "react";
 
-export async function POST(req) {
-    const formData = await req.formData();
+export default function GalleryUploadPage() {
+    const [title, setTitle] = useState("");
+    const [file, setFile] = useState<File | null>(null);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [categoryId, setCategoryId] = useState<number | null>(null);
 
-    const file = formData.get("file");
-    const title = formData.get("title");
-    const authorId = Number(formData.get("authorId") || 1);
+    useEffect(() => {
+        fetch("/api/gallery/categories")
+            .then(res => res.json())
+            .then(data => setCategories(data));
+    }, []);
 
-    if (!file) return NextResponse.json({ error: "Keine Datei hochgeladen." });
+    async function uploadHandler(e: any) {
+        e.preventDefault();
 
-    // Datei lesen
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+        if (!file) {
+            alert("Bitte eine Datei auswählen!");
+            return;
+        }
 
-    const originalName = file.name.toLowerCase();
-    const ext = originalName.split(".").pop();
+        const form = new FormData();
+        form.append("title", title);
+        form.append("authorId", "1");
+        if (categoryId) form.append("categoryId", String(categoryId));
+        form.append("file", file);
 
-    const uploadsDir = "public/uploads";
-    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const filepath = `${uploadsDir}/${filename}`;
-
-    const videoFormats = ["mp4", "mov", "webm", "mkv", "avi", "m4v"];
-
-    // 🔥 VIDEO UPLOAD
-    if (videoFormats.includes(ext)) {
-        await fs.promises.writeFile(filepath, buffer);
-
-        const media = await prisma.galleryMedia.create({
-            data: {
-                title,
-                url: `/uploads/${filename}`,
-                type: "video",
-                authorId
-            }
+        const res = await fetch("/api/gallery/upload", {
+            method: "POST",
+            body: form
         });
 
-        return NextResponse.json({ success: true, media });
+        const data = await res.json();
+
+        if (data.error) return alert(data.error);
+
+        alert("Upload erfolgreich!");
+        window.location.href = "/gallery";
     }
 
-    // 🔥 BILD-UPLOAD (wie vorher)
-    const resized = await sharp(buffer)
-        .resize({ width: 1920, withoutEnlargement: true })
-        .jpeg({ quality: 85 })
-        .toBuffer();
+    return (
+        <div className="max-w-md mx-auto px-6 py-20">
+            <h1 className="text-4xl font-bold text-glow text-center mb-8">Medien hochladen</h1>
 
-    await fs.promises.writeFile(filepath.replace(`.${ext}`, ".jpg"), resized);
+            <form 
+                onSubmit={uploadHandler}
+                className="p-6 bg-[#0c0e16] rounded-xl border border-purple-700/30"
+            >
+                <input
+                    placeholder="Titel"
+                    value={title}
+                    onChange={(e)=>setTitle(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
+                    required
+                />
 
-    const image = await prisma.galleryMedia.create({
-        data: {
-            title,
-            url: `/uploads/${filename.replace(ext, "jpg")}`,
-            type: "image",
-            authorId
-        }
-    });
+                {/* Kategorien Dropdown */}
+                <select
+                    onChange={(e)=>setCategoryId(Number(e.target.value))}
+                    className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
+                >
+                    <option value="">— Keine Kategorie —</option>
+                    {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
 
-    return NextResponse.json({ success: true, media: image });
+                <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={(e)=>setFile(e.target.files?.[0] || null)}
+                    className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
+                    required
+                />
+
+                <button
+                    type="submit"
+                    className="w-full bg-purple-600 hover:bg-purple-800 p-3 rounded-lg shadow-lg shadow-purple-500/30"
+                >
+                    Hochladen
+                </button>
+            </form>
+        </div>
+    );
 }
