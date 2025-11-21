@@ -4,10 +4,15 @@ import { useState } from "react";
 
 export default function GalleryUploadPage() {
     const [title, setTitle] = useState("");
-    const [file, setFile] = useState(null);
+    const [file, setFile] = useState<File | null>(null);
 
-    async function uploadHandler(e) {
+    async function uploadHandler(e: any) {
         e.preventDefault();
+
+        if (!file) {
+            alert("Bitte eine Datei auswählen!");
+            return;
+        }
 
         const form = new FormData();
         form.append("title", title);
@@ -26,14 +31,15 @@ export default function GalleryUploadPage() {
             return;
         }
 
-        alert("Bild erfolgreich hochgeladen!");
+        alert("Upload erfolgreich!");
+
         window.location.href = "/gallery";
     }
 
     return (
         <div className="max-w-md mx-auto px-6 py-20">
             <h1 className="text-4xl font-bold text-glow text-center mb-8">
-                Bild hochladen
+                Medien hochladen
             </h1>
 
             <form 
@@ -50,7 +56,8 @@ export default function GalleryUploadPage() {
 
                 <input
                     type="file"
-                    onChange={(e)=>setFile(e.target.files[0])}
+                    accept="image/*,video/*"
+                    onChange={(e)=>setFile(e.target.files?.[0] || null)}
                     className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
                     required
                 />
