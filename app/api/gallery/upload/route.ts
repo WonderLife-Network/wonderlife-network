@@ -12,55 +12,68 @@ export async function POST(req) {
     const title = formData.get("title");
     const authorId = Number(formData.get("authorId") || 1);
 
-    if (!file) return NextResponse.json({ error: "Keine Datei hochgeladen." });
+    if (!file)
+        return NextResponse.json({ error: "Keine Datei hochgeladen." });
 
     // Datei lesen
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Dateiendung herausfinden
+    // Dateiendung erkennen
     const originalName = file.name.toLowerCase();
     const extension = originalName.split(".").pop();
 
-    // Zielverzeichnis
+    // Ziel-Verzeichnis
     const uploadsDir = "public/uploads";
-    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-    let filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    let filepath = `${uploadsDir}/${filename}`;
-
-    // HEIC / HEIF → JPG konvertieren
-    if (extension === "heic" || extension === "heif") {
-        const converted = await sharp(buffer)
-            .jpeg({ quality: 85 })
-            .toBuffer();
-
-        fs.writeFileSync(filepath, converted);
-    } 
-    else {
-        // Normale Bilder konvertieren / optimieren
-        const converted = await sharp(buffer)
-            .jpeg({ quality: 85 })
-            .toBuffer();
-
-        fs.writeFileSync(filepath, converted);
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
     }
+
+    // Dateiname
+    const filename = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}.jpg`;
+
+    const filepath = `${uploadsDir}/${filename}`;
+
+    // Sharp Pipeline
+    let sharpInstance = sharp(buffer);
+
+    // HEIC / HEIF → JPG
+    if (extension === "heic" || extension === "heif") {
+        sharpInstance = sharpInstance.toFormat("jpeg");
+    }
+
+    // Bild auf max. 1920px Breite verkleinern (falls größer)
+    const resized = await sharpInstance
+        .resize({
+            width: 1920, // maximale Breite
+            withoutEnlargement: true, // Bild nicht vergrößern, wenn kleiner
+        })
+        .jpeg({
+            quality: 85, // 80–85% = gute Webqualität
+            chromaSubsampling: "4:4:4",
+        })
+        .toBuffer();
+
+    // Datei speichern
+    await fs.promises.writeFile(filepath, resized);
 
     // Öffentliche URL
     const url = `/uploads/${filename}`;
 
-    // Datenbank Eintrag
+    // DB Eintrag
     const dbImage = await prisma.galleryImage.create({
         data: {
             title,
             url,
-            authorId
-        }
+            authorId,
+        },
     });
 
     return NextResponse.json({
         success: true,
         url,
-        image: dbImage
+        image: dbImage,
     });
 }
