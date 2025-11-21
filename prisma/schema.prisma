@@ -38,3 +38,20 @@ model GalleryMedia {
   author    User     @relation(fields: [authorId], references: [id])
 }
 
+model GalleryCategory {
+  id        Int           @id @default(autoincrement())
+  name      String
+  media     GalleryMedia[]
+}
+
+model GalleryMedia {
+  id          Int      @id @default(autoincrement())
+  title       String
+  url         String
+  type        String   // "image" | "video"
+  authorId    Int
+  categoryId  Int?
+  createdAt   DateTime @default(now())
+  author      User     @relation(fields: [authorId], references: [id])
+  category    GalleryCategory? @relation(fields: [categoryId], references: [id])
+}
