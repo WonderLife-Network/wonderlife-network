@@ -27,3 +27,12 @@ model ForumReply {
   thread    ForumThread @relation(fields: [threadId], references: [id])
   author    User      @relation(fields: [authorId], references: [id])
 }
+
+model GalleryImage {
+  id        Int      @id @default(autoincrement())
+  title     String
+  url       String
+  authorId  Int
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id])
+}
