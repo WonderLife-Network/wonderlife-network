@@ -1,69 +1,66 @@
 export const runtime = "nodejs";
 
-"use client";
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import sharp from "sharp";
+import fs from "fs";
 
-import { useState } from "react";
+export async function POST(req) {
+    const formData = await req.formData();
 
-export default function GalleryUploadPage() {
-    const [title, setTitle] = useState("");
-    const [file, setFile] = useState(null);
+    const file = formData.get("file");
+    const title = formData.get("title");
+    const authorId = Number(formData.get("authorId") || 1);
 
-    async function uploadHandler(e) {
-        e.preventDefault();
+    if (!file) return NextResponse.json({ error: "Keine Datei hochgeladen." });
 
-        const form = new FormData();
-        form.append("title", title);
-        form.append("authorId", "1"); // später session.user.id
-        form.append("file", file);
+    // Datei lesen
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-        const res = await fetch("/api/gallery/upload", {
-            method: "POST",
-            body: form
-        });
+    // Dateiendung herausfinden
+    const originalName = file.name.toLowerCase();
+    const extension = originalName.split(".").pop();
 
-        const data = await res.json();
+    // Zielverzeichnis
+    const uploadsDir = "public/uploads";
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
+    let filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    let filepath = `${uploadsDir}/${filename}`;
 
-        alert("Bild erfolgreich hochgeladen!");
-        window.location.href = "/gallery";
+    // HEIC / HEIF → JPG konvertieren
+    if (extension === "heic" || extension === "heif") {
+        const converted = await sharp(buffer)
+            .jpeg({ quality: 85 })
+            .toBuffer();
+
+        fs.writeFileSync(filepath, converted);
+    } 
+    else {
+        // Normale Bilder konvertieren / optimieren
+        const converted = await sharp(buffer)
+            .jpeg({ quality: 85 })
+            .toBuffer();
+
+        fs.writeFileSync(filepath, converted);
     }
 
-    return (
-        <div className="max-w-md mx-auto px-6 py-20">
-            <h1 className="text-4xl font-bold text-glow text-center mb-8">
-                Bild hochladen
-            </h1>
+    // Öffentliche URL
+    const url = `/uploads/${filename}`;
 
-            <form 
-                onSubmit={uploadHandler}
-                className="p-6 bg-[#0c0e16] rounded-xl border border-purple-700/30"
-            >
-                <input
-                    placeholder="Titel"
-                    value={title}
-                    onChange={(e)=>setTitle(e.target.value)}
-                    className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
-                    required
-                />
+    // Datenbank Eintrag
+    const dbImage = await prisma.galleryImage.create({
+        data: {
+            title,
+            url,
+            authorId
+        }
+    });
 
-                <input
-                    type="file"
-                    onChange={(e)=>setFile(e.target.files[0])}
-                    className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
-                    required
-                />
-
-                <button
-                    type="submit"
-                    className="w-full bg-purple-600 hover:bg-purple-800 p-3 rounded-lg shadow-lg shadow-purple-500/30"
-                >
-                    Hochladen
-                </button>
-            </form>
-        </div>
-    );
+    return NextResponse.json({
+        success: true,
+        url,
+        image: dbImage
+    });
 }
