@@ -2,7 +2,12 @@
 
 import React from "react";
 
-export default function Lightbox({ media, onClose }: any) {
+interface LightboxProps {
+    media: any;
+    onClose: () => void;
+}
+
+export default function Lightbox({ media, onClose }: LightboxProps) {
     if (!media) return null;
 
     return (
