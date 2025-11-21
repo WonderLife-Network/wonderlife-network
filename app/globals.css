@@ -23,3 +23,7 @@ body {
 header a:hover {
     text-shadow: 0 0 6px rgba(140, 0, 255, 0.8);
 }
+
+footer a:hover {
+    text-shadow: 0 0 8px rgba(255, 0, 200, 0.6);
+}
