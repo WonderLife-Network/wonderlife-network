@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    background: radial-gradient(circle at 30% 20%, #1a093f, #05060a 60%);
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+
+.section {
+    padding: 5rem 0;
+}
+
+.glow {
+    box-shadow: 0 0 40px rgba(140, 0, 255, 0.6);
+}
+
+.text-glow {
+    text-shadow: 0 0 8px rgba(255, 0, 200, 0.8);
+}
