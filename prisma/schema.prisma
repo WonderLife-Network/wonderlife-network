@@ -112,3 +112,10 @@ enum Role {
   ADMIN
   OWNER
 }
+
+const response = NextResponse.json({ success: true });
+
+response.cookies.set("userId", user.id.toString());
+response.cookies.set("role", user.role);
+
+return response;
