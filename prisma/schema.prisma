@@ -1,0 +1,29 @@
+model ForumCategory {
+  id        Int           @id @default(autoincrement())
+  title     String
+  desc      String
+  threads   ForumThread[]
+  createdAt DateTime      @default(now())
+}
+
+model ForumThread {
+  id          Int             @id @default(autoincrement())
+  title       String
+  content     String
+  categoryId  Int
+  authorId    Int
+  createdAt   DateTime        @default(now())
+  category    ForumCategory   @relation(fields: [categoryId], references: [id])
+  author      User            @relation(fields: [authorId], references: [id])
+  replies     ForumReply[]
+}
+
+model ForumReply {
+  id        Int      @id @default(autoincrement())
+  content   String
+  threadId  Int
+  authorId  Int
+  createdAt DateTime @default(now())
+  thread    ForumThread @relation(fields: [threadId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id])
+}
