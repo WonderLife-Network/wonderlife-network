@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 
 export default async function GalleryPage() {
-    const images = await prisma.galleryImage.findMany({
+    const media = await prisma.galleryMedia.findMany({
         orderBy: { id: "desc" }
     });
 
@@ -13,18 +13,28 @@ export default async function GalleryPage() {
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {images.map(img => (
+                {media.map(item => (
                     <Link
-                        href={`/gallery/${img.id}`}
-                        key={img.id}
+                        href={`/gallery/${item.id}`}
+                        key={item.id}
                         className="block group"
                     >
-                        <img 
-                            src={img.url}
-                            className="rounded-xl shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300"
-                        />
+                        {item.type === "image" ? (
+                            <img 
+                                src={item.url}
+                                className="rounded-xl shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300"
+                            />
+                        ) : (
+                            <video
+                                src={item.url}
+                                className="rounded-xl shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300"
+                                style={{ maxHeight: "300px" }}
+                                muted
+                            />
+                        )}
+                        
                         <p className="mt-2 text-sm opacity-70">
-                            {img.title}
+                            {item.title}
                         </p>
                     </Link>
                 ))}
