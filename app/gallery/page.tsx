@@ -1,10 +1,17 @@
-import prisma from "@/lib/prisma";
-import Link from "next/link";
+"use client";
 
-export default async function GalleryPage() {
-    const media = await prisma.galleryMedia.findMany({
-        orderBy: { id: "desc" }
-    });
+import { useState, useEffect } from "react";
+import Lightbox from "@/components/Lightbox";
+
+export default function GalleryPage() {
+    const [mediaList, setMediaList] = useState<any[]>([]);
+    const [selected, setSelected] = useState(null);
+
+    useEffect(() => {
+        fetch("/api/gallery/list")
+            .then(res => res.json())
+            .then(data => setMediaList(data));
+    }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-20">
@@ -13,11 +20,11 @@ export default async function GalleryPage() {
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {media.map(item => (
-                    <Link
-                        href={`/gallery/${item.id}`}
+                {mediaList.map(item => (
+                    <div
                         key={item.id}
-                        className="block group"
+                        className="group cursor-pointer"
+                        onClick={() => setSelected(item)}
                     >
                         {item.type === "image" ? (
                             <img 
@@ -33,12 +40,12 @@ export default async function GalleryPage() {
                             />
                         )}
                         
-                        <p className="mt-2 text-sm opacity-70">
-                            {item.title}
-                        </p>
-                    </Link>
+                        <p className="mt-2 text-sm opacity-70">{item.title}</p>
+                    </div>
                 ))}
             </div>
+
+            <Lightbox media={selected} onClose={() => setSelected(null)} />
         </div>
     );
 }
