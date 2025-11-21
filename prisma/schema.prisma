@@ -66,3 +66,34 @@ model News {
   updatedAt   DateTime @updatedAt
   authorId    Int?
 }
+
+model ForumCategory {
+  id          Int            @id @default(autoincrement())
+  name        String
+  description String?
+  threads     ForumThread[]
+}
+
+model ForumThread {
+  id          Int              @id @default(autoincrement())
+  title       String
+  content     String
+  categoryId  Int
+  authorId    Int
+  views       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  category    ForumCategory    @relation(fields: [categoryId], references: [id])
+  replies     ForumReply[]
+}
+
+model ForumReply {
+  id        Int        @id @default(autoincrement())
+  content   String
+  threadId  Int
+  authorId  Int
+  createdAt DateTime   @default(now())
+
+  thread    ForumThread @relation(fields: [threadId], references: [id])
+}
