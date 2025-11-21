@@ -120,3 +120,65 @@ export default function HomePage() {
       </section>
 
       {/* DISCORD SERVER */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <h2 className="text-4xl font-bold mb-10 text-center">
+          Unsere Discord Server
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[
+            { title: "WonderLife Network", icon: "/discord.png", id: "1438177248678121615" },
+            { title: "WonderLife City", icon: "/discord.png", id: "1329371549035135037" },
+            { title: "WonderLife Studios", icon: "/discord.png", id: "1438324009929543694" },
+            { title: "WonderLife FM", icon: "/discord.png", id: "1438326396677263463" },
+            { title: "WonderLife Logs", icon: "/discord.png", id: "1438574264126144595" },
+            { title: "WonderLife Routes", icon: "/discord.png", id: "1438476402277220364" },
+          ].map((d, i) => (
+            <div
+              key={i}
+              className="p-5 bg-[#0d0f18] border border-purple-800/40 rounded-xl shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] transition"
+            >
+              <div className="flex items-center gap-4">
+                <Image src={d.icon} width={48} height={48} alt="icon" />
+                <div>
+                  <h3 className="text-xl font-bold">{d.title}</h3>
+                  <p className="text-sm opacity-60">{d.id}</p>
+                </div>
+              </div>
+
+              <Link href={`https://discord.gg/${d.id}`}>
+                <button className="mt-4 w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-800 shadow-md shadow-purple-500/30">
+                  Beitreten
+                </button>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* NEWS */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <h2 className="text-4xl font-bold mb-10 text-center">Neuigkeiten</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          {news.map((n: any, i) => (
+            <div key={i} className="bg-[#0d0f18] p-5 rounded-xl border border-purple-800/30">
+              <h3 className="text-xl font-bold">{n.title}</h3>
+              <p className="opacity-70 mt-2">{n.description}</p>
+              <Link href={`/news/${n.id}`}>
+                <button className="mt-3 text-purple-400 hover:text-purple-200">
+                  Weiterlesen →
+                </button>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-10 bg-black/40 text-center opacity-80">
+        <p>Made with ♥ by WonderLife Development</p>
+      </footer>
+    </div>
+  );
+}
