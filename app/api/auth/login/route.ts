@@ -21,5 +21,10 @@ export async function POST(req) {
         { expiresIn: "7d" }
     );
 
-    return NextResponse.json({ token });
-}
+const response = NextResponse.json({ success: true });
+
+response.cookies.set("userId", user.id.toString());
+response.cookies.set("role", user.role);
+
+return response;
+
