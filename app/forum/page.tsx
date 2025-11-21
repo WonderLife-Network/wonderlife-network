@@ -1,29 +1,36 @@
+"use client";
+
 import Link from "next/link";
-import prisma from "@/lib/prisma";
+import { useEffect, useState } from "react";
 
-export default async function ForumPage() {
-    const categories = await prisma.forumCategory.findMany({
-        orderBy: { id: "asc" }
-    });
+export default function ForumHome() {
+  const [categories, setCategories] = useState([]);
 
-    return (
-        <div className="max-w-5xl mx-auto px-6 py-20">
-            <h1 className="text-5xl font-bold text-glow text-center mb-12">
-                WonderLife Forum
-            </h1>
+  useEffect(() => {
+    fetch("/api/forum")
+      .then(res => res.json())
+      .then(data => setCategories(data));
+  }, []);
 
-            <div className="space-y-6">
-                {categories.map(cat => (
-                    <Link
-                        key={cat.id}
-                        href={`/forum/${cat.id}`}
-                        className="block p-6 rounded-xl bg-[#0d0f18] border border-purple-800/40 hover:border-purple-500 transition shadow-lg"
-                    >
-                        <h2 className="text-2xl font-semibold">{cat.title}</h2>
-                        <p className="opacity-70">{cat.desc}</p>
-                    </Link>
-                ))}
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-20 text-white">
+      <h1 className="text-5xl font-bold mb-10 text-center">
+        WonderLife Forum
+      </h1>
+
+      <div className="space-y-6">
+        {categories.map((cat: any) => (
+          <Link key={cat.id} href={`/forum/category/${cat.id}`}>
+            <div className="p-6 rounded-xl bg-[#0d0f18] border border-purple-800/40 hover:scale-[1.02] transition cursor-pointer">
+              <h2 className="text-2xl font-bold">{cat.name}</h2>
+              <p className="opacity-70">{cat.description}</p>
+              <p className="mt-2 text-purple-400">
+                {cat._count.threads} Themen
+              </p>
             </div>
-        </div>
-    );
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
