@@ -4,23 +4,30 @@ import { useState } from "react";
 
 export default function GalleryUploadPage() {
     const [title, setTitle] = useState("");
-    const [url, setUrl] = useState("");
+    const [file, setFile] = useState(null);
 
     async function uploadHandler(e) {
         e.preventDefault();
 
+        const form = new FormData();
+        form.append("title", title);
+        form.append("authorId", "1"); // später session.user.id
+        form.append("file", file);
+
         const res = await fetch("/api/gallery/upload", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title,
-                url,
-                authorId: 1  // später ersetzen mit: session.user.id
-            })
+            body: form
         });
 
         const data = await res.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
         alert("Bild erfolgreich hochgeladen!");
+        window.location.href = "/gallery";
     }
 
     return (
@@ -42,9 +49,8 @@ export default function GalleryUploadPage() {
                 />
 
                 <input
-                    placeholder="Bild-URL"
-                    value={url}
-                    onChange={(e)=>setUrl(e.target.value)}
+                    type="file"
+                    onChange={(e)=>setFile(e.target.files[0])}
                     className="w-full p-3 rounded-lg bg-[#141722] border border-purple-700/30 mb-4"
                     required
                 />
