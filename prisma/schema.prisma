@@ -119,3 +119,13 @@ response.cookies.set("userId", user.id.toString());
 response.cookies.set("role", user.role);
 
 return response;
+
+model Session {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  userAgent  String
+  ip         String?
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @updatedAt
+}
