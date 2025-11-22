@@ -28,10 +28,13 @@ export default function TicketDetail({ params }) {
     setTeam(data.team);
   }
 
-  useEffect(() => {
-    loadTicket();
-    loadTeam();
-  }, []);
+useEffect(() => {
+  loadTicket();
+
+  fetch("/api/team/list")
+    .then((res) => res.json())
+    .then((d) => setTeam(d.team));
+}, []);
 
   // Nachricht senden
   async function sendMessage() {
