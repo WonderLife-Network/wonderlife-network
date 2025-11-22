@@ -8,52 +8,50 @@ export default function TicketDetail({ params }) {
   const [ticket, setTicket] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [ticketLogs, setTicketLogs] = useState<any[]>([]);
+  const [uploads, setUploads] = useState<any[]>([]);
   const [reply, setReply] = useState("");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState<any[]>([]);
 
-  // --------------------------------------------------------------------
   // TICKET LADEN
-  // --------------------------------------------------------------------
   async function loadTicket() {
     const res = await fetch(`/api/tickets/${ticketId}/details`);
     const data = await res.json();
-
     setTicket(data.ticket);
     setMessages(data.ticket?.messages || []);
     setLoading(false);
   }
 
-  // --------------------------------------------------------------------
   // TEAM LADEN
-  // --------------------------------------------------------------------
   async function loadTeam() {
     const res = await fetch("/api/team/list");
     const data = await res.json();
     setTeam(data.team);
   }
 
-  // --------------------------------------------------------------------
   // LOGS LADEN
-  // --------------------------------------------------------------------
   async function loadLogs() {
     const res = await fetch(`/api/tickets/${ticketId}/logs`);
     const data = await res.json();
     setTicketLogs(data.logs);
   }
 
-  // --------------------------------------------------------------------
-  // USE EFFECT
-  // --------------------------------------------------------------------
+  // UPLOADS LADEN
+  async function loadUploads() {
+    const res = await fetch(`/api/tickets/${ticketId}/uploads`);
+    const data = await res.json();
+    setUploads(data.uploads);
+  }
+
   useEffect(() => {
     loadTicket();
     loadTeam();
     loadLogs();
+    loadUploads();
   }, []);
 
-  // --------------------------------------------------------------------
   // NACHRICHT SENDEN
-  // --------------------------------------------------------------------
   async function sendMessage() {
     if (!reply.trim()) return;
 
@@ -70,9 +68,7 @@ export default function TicketDetail({ params }) {
     }
   }
 
-  // --------------------------------------------------------------------
   // TICKET SCHLIESSEN
-  // --------------------------------------------------------------------
   async function closeTicket() {
     const res = await fetch(`/api/tickets/${ticketId}/close`, {
       method: "POST",
@@ -85,9 +81,7 @@ export default function TicketDetail({ params }) {
     }
   }
 
-  // --------------------------------------------------------------------
   // PRIORITÄT ÄNDERN
-  // --------------------------------------------------------------------
   async function changePriority(newPriority: string) {
     const res = await fetch(`/api/tickets/${ticketId}/priority`, {
       method: "POST",
@@ -101,9 +95,7 @@ export default function TicketDetail({ params }) {
     }
   }
 
-  // --------------------------------------------------------------------
   // TICKET ZUWEISEN
-  // --------------------------------------------------------------------
   async function assignTicket(staffId: string) {
     const res = await fetch(`/api/tickets/${ticketId}/assign`, {
       method: "POST",
@@ -117,9 +109,26 @@ export default function TicketDetail({ params }) {
     }
   }
 
-  // --------------------------------------------------------------------
-  // LOADING / ERROR
-  // --------------------------------------------------------------------
+  // DATEI HOCHLADEN
+  async function upload() {
+    if (!uploadFile) return;
+
+    const form = new FormData();
+    form.append("file", uploadFile);
+
+    const res = await fetch(`/api/tickets/${ticketId}/upload`, {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setUploadFile(null);
+      loadUploads();
+      loadLogs();
+    }
+  }
+
   if (loading) {
     return <div className="text-white p-10">Ticket wird geladen…</div>;
   }
@@ -128,9 +137,6 @@ export default function TicketDetail({ params }) {
     return <div className="text-white p-10">Ticket nicht gefunden.</div>;
   }
 
-  // --------------------------------------------------------------------
-  // FRONTEND RENDERING
-  // --------------------------------------------------------------------
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 text-white">
 
@@ -147,7 +153,6 @@ export default function TicketDetail({ params }) {
 
       {/* HEADER */}
       <div className="bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6 mb-10">
-
         <h2 className="text-3xl font-bold mb-3">{ticket.title}</h2>
 
         <div className="flex flex-wrap gap-4 text-sm opacity-75">
@@ -172,7 +177,6 @@ export default function TicketDetail({ params }) {
           </p>
         </div>
 
-        {/* Ticket schließen */}
         {ticket.status === "open" && (
           <button
             onClick={closeTicket}
@@ -217,6 +221,61 @@ export default function TicketDetail({ params }) {
         </select>
       </div>
 
+      {/* DATEI-UPLOAD */}
+      <div className="mt-10 bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
+        <h3 className="text-xl font-bold mb-4">Datei hochladen</h3>
+
+        <input
+          type="file"
+          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+          className="w-full p-3 rounded-lg bg-black/40 border border-purple-700/40"
+        />
+
+        <button
+          onClick={upload}
+          className="mt-4 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold"
+        >
+          Hochladen
+        </button>
+      </div>
+
+      {/* GALERIE (3-Spalten Raster) */}
+      <div className="mt-10 bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
+        <h3 className="text-xl font-bold mb-4">Dateien im Ticket</h3>
+
+        {uploads.length === 0 ? (
+          <p className="opacity-50">Noch keine Dateien hochgeladen.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+            {uploads.map((file) => (
+              <div
+                key={file.id}
+                className="bg-[#141726] rounded-xl border border-purple-600/20 overflow-hidden shadow-lg"
+              >
+                {file.type === "image" ? (
+                  <img
+                    src={file.url}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : (
+                  <video
+                    src={file.url}
+                    controls
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+
+                <div className="p-3 text-xs opacity-60">
+                  {file.url.split("/").pop()}
+                </div>
+              </div>
+            ))}
+
+          </div>
+        )}
+      </div>
+
       {/* NACHRICHTEN */}
       <div className="space-y-4 my-10">
         {messages.length === 0 ? (
@@ -239,7 +298,7 @@ export default function TicketDetail({ params }) {
         )}
       </div>
 
-      {/* TICKET LOGS */}
+      {/* LOGS */}
       <div className="my-10 bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
         <h3 className="text-xl font-bold mb-4">Ticket-Verlauf</h3>
 
@@ -252,7 +311,9 @@ export default function TicketDetail({ params }) {
                 key={log.id}
                 className="p-3 bg-[#141726] border border-purple-600/20 rounded-lg"
               >
-                <p className="font-semibold text-purple-300">{log.action}</p>
+                <p className="font-semibold text-purple-300">
+                  {log.action}
+                </p>
                 <p className="text-xs opacity-50 mt-1">
                   {new Date(log.createdAt).toLocaleString("de-DE")}
                 </p>
@@ -262,7 +323,7 @@ export default function TicketDetail({ params }) {
         )}
       </div>
 
-      {/* ANTWORT-FELD */}
+      {/* ANTWORT */}
       {ticket.status === "open" && (
         <div className="bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
           <h3 className="text-xl font-bold mb-4">Antworten</h3>
