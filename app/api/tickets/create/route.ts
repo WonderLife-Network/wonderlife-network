@@ -1,43 +1,52 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { writeFile } from "fs/promises";
+import { systemLog } from "@/lib/systemLogger";
+import { modLog } from "@/lib/modLogger";
+import { handleApiError } from "@/lib/apiError";
 
 export async function POST(req: Request) {
-  const form = await req.formData();
+  try {
+    const { title, category, message, priority } = await req.json();
 
-  const title = form.get("title")?.toString() || "";
-  const description = form.get("description")?.toString() || "";
-  const category = form.get("category")?.toString() || "";
-  const priority = form.get("priority")?.toString() || "NORMAL";
-  const file = form.get("file") as unknown as File | null;
+    const cookies = req.headers.get("cookie") || "";
+    const authorId = cookies
+      .split(";")
+      .find((c) => c.trim().startsWith("userId="))
+      ?.split("=")[1];
 
-  const userId = Number((req.headers as any).get("x-user-id"));
+    if (!authorId)
+      return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 });
 
-  let fileUrl = null;
+    const ticket = await prisma.ticket.create({
+      data: {
+        title,
+        category,
+        priority: priority || "normal",
+        authorId: Number(authorId),
+      },
+    });
 
-  // Datei speichern
-  if (file && file.name) {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    if (message) {
+      await prisma.ticketMessage.create({
+        data: {
+          ticketId: ticket.id,
+          authorId: Number(authorId),
+          message,
+        },
+      });
+    }
 
-    const fileName = Date.now() + "-" + file.name;
-    const path = `./public/tickets/${fileName}`;
+    await prisma.ticketLog.create({
+      data: {
+        ticketId: ticket.id,
+        action: `Ticket erstellt von User ${authorId}`,
+      },
+    });
 
-    await writeFile(path, buffer);
-    fileUrl = `/tickets/${fileName}`;
+    await systemLog("Ticket erstellt", { ticketId: ticket.id }, authorId);
+
+    return NextResponse.json({ success: true, ticket });
+  } catch (error) {
+    return handleApiError("/api/tickets/create", "POST", error);
   }
-
-  // Ticket speichern
-  const ticket = await prisma.ticket.create({
-    data: {
-      title,
-      description,
-      category,
-      priority,
-      creatorId: userId,
-      status: "OPEN",
-    },
-  });
-
-  return NextResponse.json({ success: true, ticket });
 }
