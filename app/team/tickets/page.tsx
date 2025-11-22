@@ -3,13 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+// Badge-Icons importieren
+import { 
+  StatusBadge, 
+  PriorityBadge, 
+  AssignBadge 
+} from "@/components/TicketBadges";
+
 export default function TeamTicketsPage() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  // Lade alle Tickets
+  // --------------------------------------------------------------------
+  // ALLE TICKETS LADEN
+  // --------------------------------------------------------------------
   async function loadTickets() {
     const res = await fetch("/api/team/tickets");
     const data = await res.json();
@@ -19,7 +28,9 @@ export default function TeamTicketsPage() {
     setLoading(false);
   }
 
-  // Filter anwenden
+  // --------------------------------------------------------------------
+  // FILTER
+  // --------------------------------------------------------------------
   function applyFilter(type: string) {
     setFilter(type);
 
@@ -31,10 +42,16 @@ export default function TeamTicketsPage() {
     if (type === "unassigned") return setFiltered(tickets.filter((t) => !t.assignedTo));
   }
 
+  // --------------------------------------------------------------------
+  // MOUNT
+  // --------------------------------------------------------------------
   useEffect(() => {
     loadTickets();
   }, []);
 
+  // --------------------------------------------------------------------
+  // RENDER
+  // --------------------------------------------------------------------
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 text-white">
 
@@ -49,51 +66,29 @@ export default function TeamTicketsPage() {
         </div>
       </div>
 
+      {/* TITEL */}
       <h2 className="text-2xl font-bold mb-6">Alle Tickets</h2>
 
-      {/* FILTER */}
+      {/* FILTER BUTTONS */}
       <div className="flex flex-wrap gap-3 mb-8">
-        <button
-          onClick={() => applyFilter("all")}
-          className={`px-4 py-2 rounded-lg border border-purple-600/40 ${filter === "all" ? "bg-purple-600" : "bg-[#141726]"}`}
-        >
-          Alle
-        </button>
-
-        <button
-          onClick={() => applyFilter("open")}
-          className={`px-4 py-2 rounded-lg border border-green-600/40 ${filter === "open" ? "bg-green-600" : "bg-[#141726]"}`}
-        >
-          Offen
-        </button>
-
-        <button
-          onClick={() => applyFilter("closed")}
-          className={`px-4 py-2 rounded-lg border border-red-600/40 ${filter === "closed" ? "bg-red-600" : "bg-[#141726]"}`}
-        >
-          Geschlossen
-        </button>
-
-        <button
-          onClick={() => applyFilter("high")}
-          className={`px-4 py-2 rounded-lg border border-yellow-600/40 ${filter === "high" ? "bg-yellow-600" : "bg-[#141726]"}`}
-        >
-          Hoch
-        </button>
-
-        <button
-          onClick={() => applyFilter("assigned")}
-          className={`px-4 py-2 rounded-lg border border-blue-600/40 ${filter === "assigned" ? "bg-blue-600" : "bg-[#141726]"}`}
-        >
-          Zugewiesen
-        </button>
-
-        <button
-          onClick={() => applyFilter("unassigned")}
-          className={`px-4 py-2 rounded-lg border border-gray-600/40 ${filter === "unassigned" ? "bg-gray-600" : "bg-[#141726]"}`}
-        >
-          Unzugewiesen
-        </button>
+        {[
+          ["all", "Alle", "purple"],
+          ["open", "Offen", "green"],
+          ["closed", "Geschlossen", "red"],
+          ["high", "Hohe Priorität", "yellow"],
+          ["assigned", "Zugewiesen", "pink"],
+          ["unassigned", "Unzugewiesen", "gray"]
+        ].map(([value, label, color]) => (
+          <button
+            key={value}
+            onClick={() => applyFilter(value)}
+            className={`px-4 py-2 rounded-lg border border-${color}-600/40 ${
+              filter === value ? `bg-${color}-600` : "bg-[#141726]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* TICKET LISTE */}
@@ -110,38 +105,28 @@ export default function TeamTicketsPage() {
               href={`/tickets/${t.id}`}
               className="bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6 hover:border-purple-400 transition shadow-lg"
             >
+              {/* TITEL + STATUS */}
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-xl font-bold">#{t.id} – {t.title}</h3>
 
-                {/* STATUS BADGE */}
-                <span
-                  className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                    t.status === "open"
-                      ? "bg-green-600"
-                      : "bg-red-600"
-                  }`}
-                >
-                  {t.status}
-                </span>
+                {/* StatusBadge */}
+                <StatusBadge status={t.status} />
               </div>
 
+              {/* KATEGORIE */}
               <p className="opacity-80 mb-2">
                 Kategorie: {t.category}
               </p>
 
-              {/* PRIORITY BADGE */}
-              <span
-                className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                  t.priority === "high"
-                    ? "bg-yellow-600"
-                    : t.priority === "low"
-                    ? "bg-blue-600"
-                    : "bg-purple-600"
-                }`}
-              >
-                Priorität: {t.priority}
-              </span>
+              {/* PRIORITÄTS-BADGE */}
+              <PriorityBadge priority={t.priority} />
 
+              {/* ASSIGN BADGE */}
+              <div className="mt-3">
+                <AssignBadge assignedTo={t.assignedTo} />
+              </div>
+
+              {/* DATUM */}
               <div className="mt-4 text-sm opacity-50">
                 Erstellt: {new Date(t.createdAt).toLocaleString("de-DE")}
               </div>
