@@ -129,3 +129,31 @@ model Session {
   createdAt  DateTime @default(now())
   lastUsedAt DateTime @updatedAt
 }
+
+model Ticket {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  status      String    @default("OPEN")
+  priority    String    @default("NORMAL")
+  category    String
+  creatorId   Int
+  assignedId  Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  creator     User      @relation("TicketCreator", fields: [creatorId], references: [id])
+  assigned    User?     @relation("TicketAssigned", fields: [assignedId], references: [id])
+  messages    TicketMessage[]
+}
+
+model TicketMessage {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  message   String
+  createdAt DateTime @default(now())
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+}
