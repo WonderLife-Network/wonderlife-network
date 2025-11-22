@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { modLog } from "@/lib/modLogger";
 
 export async function POST(req: any, { params }: any) {
   const data = await req.json();
