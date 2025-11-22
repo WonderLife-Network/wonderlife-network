@@ -157,3 +157,33 @@ model TicketMessage {
   ticket    Ticket   @relation(fields: [ticketId], references: [id])
   author    User     @relation(fields: [authorId], references: [id])
 }
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  type      String   // SYSTEM
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model ModLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  createdAt DateTime @default(now())
+}
+
+model ApiLog {
+  id        Int      @id @default(autoincrement())
+  route     String
+  method    String
+  status    Int
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+model TicketLog {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  message   String
+  createdAt DateTime @default(now())
+}
