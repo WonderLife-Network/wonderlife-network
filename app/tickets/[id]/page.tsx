@@ -7,11 +7,14 @@ export default function TicketDetail({ params }) {
 
   const [ticket, setTicket] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [ticketLogs, setTicketLogs] = useState<any[]>([]);
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState<any[]>([]);
 
-  // Ticket laden
+  // --------------------------------------------------------------------
+  // TICKET LADEN
+  // --------------------------------------------------------------------
   async function loadTicket() {
     const res = await fetch(`/api/tickets/${ticketId}/details`);
     const data = await res.json();
@@ -21,22 +24,36 @@ export default function TicketDetail({ params }) {
     setLoading(false);
   }
 
-  // Team laden
+  // --------------------------------------------------------------------
+  // TEAM LADEN
+  // --------------------------------------------------------------------
   async function loadTeam() {
     const res = await fetch("/api/team/list");
     const data = await res.json();
     setTeam(data.team);
   }
 
-useEffect(() => {
-  loadTicket();
+  // --------------------------------------------------------------------
+  // LOGS LADEN
+  // --------------------------------------------------------------------
+  async function loadLogs() {
+    const res = await fetch(`/api/tickets/${ticketId}/logs`);
+    const data = await res.json();
+    setTicketLogs(data.logs);
+  }
 
-  fetch("/api/team/list")
-    .then((res) => res.json())
-    .then((d) => setTeam(d.team));
-}, []);
+  // --------------------------------------------------------------------
+  // USE EFFECT
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    loadTicket();
+    loadTeam();
+    loadLogs();
+  }, []);
 
-  // Nachricht senden
+  // --------------------------------------------------------------------
+  // NACHRICHT SENDEN
+  // --------------------------------------------------------------------
   async function sendMessage() {
     if (!reply.trim()) return;
 
@@ -49,20 +66,28 @@ useEffect(() => {
     if (data.success) {
       setReply("");
       loadTicket();
+      loadLogs();
     }
   }
 
-  // Ticket schließen
+  // --------------------------------------------------------------------
+  // TICKET SCHLIESSEN
+  // --------------------------------------------------------------------
   async function closeTicket() {
     const res = await fetch(`/api/tickets/${ticketId}/close`, {
       method: "POST",
     });
 
     const data = await res.json();
-    if (data.success) loadTicket();
+    if (data.success) {
+      loadTicket();
+      loadLogs();
+    }
   }
 
-  // Priorität ändern
+  // --------------------------------------------------------------------
+  // PRIORITÄT ÄNDERN
+  // --------------------------------------------------------------------
   async function changePriority(newPriority: string) {
     const res = await fetch(`/api/tickets/${ticketId}/priority`, {
       method: "POST",
@@ -70,10 +95,15 @@ useEffect(() => {
     });
 
     const data = await res.json();
-    if (data.success) loadTicket();
+    if (data.success) {
+      loadTicket();
+      loadLogs();
+    }
   }
 
-  // Ticket zuweisen
+  // --------------------------------------------------------------------
+  // TICKET ZUWEISEN
+  // --------------------------------------------------------------------
   async function assignTicket(staffId: string) {
     const res = await fetch(`/api/tickets/${ticketId}/assign`, {
       method: "POST",
@@ -81,9 +111,15 @@ useEffect(() => {
     });
 
     const data = await res.json();
-    if (data.success) loadTicket();
+    if (data.success) {
+      loadTicket();
+      loadLogs();
+    }
   }
 
+  // --------------------------------------------------------------------
+  // LOADING / ERROR
+  // --------------------------------------------------------------------
   if (loading) {
     return <div className="text-white p-10">Ticket wird geladen…</div>;
   }
@@ -92,6 +128,9 @@ useEffect(() => {
     return <div className="text-white p-10">Ticket nicht gefunden.</div>;
   }
 
+  // --------------------------------------------------------------------
+  // FRONTEND RENDERING
+  // --------------------------------------------------------------------
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 text-white">
 
@@ -197,6 +236,29 @@ useEffect(() => {
               </p>
             </div>
           ))
+        )}
+      </div>
+
+      {/* TICKET LOGS */}
+      <div className="my-10 bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
+        <h3 className="text-xl font-bold mb-4">Ticket-Verlauf</h3>
+
+        {ticketLogs.length === 0 ? (
+          <p className="opacity-50">Keine Log-Einträge vorhanden.</p>
+        ) : (
+          <div className="space-y-4">
+            {ticketLogs.map((log) => (
+              <div
+                key={log.id}
+                className="p-3 bg-[#141726] border border-purple-600/20 rounded-lg"
+              >
+                <p className="font-semibold text-purple-300">{log.action}</p>
+                <p className="text-xs opacity-50 mt-1">
+                  {new Date(log.createdAt).toLocaleString("de-DE")}
+                </p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
