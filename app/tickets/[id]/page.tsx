@@ -50,16 +50,23 @@ export default function TicketDetail({ params }) {
     if (data.success) loadTicket();
   }
 
+  // Priorität ändern
+  async function changePriority(newPriority: string) {
+    const res = await fetch(`/api/tickets/${ticketId}/priority`, {
+      method: "POST",
+      body: JSON.stringify({ priority: newPriority }),
+    });
+
+    const data = await res.json();
+    if (data.success) loadTicket();
+  }
+
   if (loading) {
-    return (
-      <div className="text-white p-10">Ticket wird geladen…</div>
-    );
+    return <div className="text-white p-10">Ticket wird geladen…</div>;
   }
 
   if (!ticket) {
-    return (
-      <div className="text-white p-10">Ticket nicht gefunden.</div>
-    );
+    return <div className="text-white p-10">Ticket nicht gefunden.</div>;
   }
 
   return (
@@ -79,36 +86,28 @@ export default function TicketDetail({ params }) {
       {/* HEADER */}
       <div className="bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6 mb-10">
 
-        <h2 className="text-3xl font-bold mb-3">
-          {ticket.title}
-        </h2>
+        <h2 className="text-3xl font-bold mb-3">{ticket.title}</h2>
 
         <div className="flex flex-wrap gap-4 text-sm opacity-75">
-
-          <p>
-            <b>Kategorie:</b> {ticket.category}
-          </p>
-
+          <p><b>Kategorie:</b> {ticket.category}</p>
+          <p>|</p>
           <p>
             <b>Status:</b>{" "}
-            <span className={
-              ticket.status === "open"
-                ? "text-green-400"
-                : "text-red-400"
-            }>
+            <span
+              className={
+                ticket.status === "open" ? "text-green-400" : "text-red-400"
+              }
+            >
               {ticket.status}
             </span>
           </p>
-
-          <p>
-            <b>Priorität:</b> {ticket.priority}
-          </p>
-
+          <p>|</p>
+          <p><b>Priorität:</b> {ticket.priority}</p>
+          <p>|</p>
           <p>
             <b>Erstellt:</b>{" "}
             {new Date(ticket.createdAt).toLocaleString("de-DE")}
           </p>
-
         </div>
 
         {/* Ticket schließen */}
@@ -122,8 +121,23 @@ export default function TicketDetail({ params }) {
         )}
       </div>
 
+      {/* PRIORITÄT ÄNDERN */}
+      <div className="mt-10 bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
+        <h3 className="text-xl font-bold mb-3">Priorität ändern</h3>
+
+        <select
+          className="w-full p-3 bg-black/40 border border-purple-700/40 rounded-lg"
+          value={ticket.priority}
+          onChange={(e) => changePriority(e.target.value)}
+        >
+          <option value="low">Niedrig</option>
+          <option value="normal">Normal</option>
+          <option value="high">Hoch</option>
+        </select>
+      </div>
+
       {/* NACHRICHTEN */}
-      <div className="space-y-4 mb-10">
+      <div className="space-y-4 my-10">
         {messages.length === 0 ? (
           <p className="opacity-50">Keine Nachrichten vorhanden.</p>
         ) : (
@@ -132,12 +146,8 @@ export default function TicketDetail({ params }) {
               key={m.id}
               className="p-4 bg-[#141726] border border-purple-600/20 rounded-xl"
             >
-              <p className="font-semibold mb-1">
-                User #{m.authorId}
-              </p>
-              {m.message && (
-                <p className="opacity-90">{m.message}</p>
-              )}
+              <p className="font-semibold mb-1">User #{m.authorId}</p>
+              {m.message && <p className="opacity-90">{m.message}</p>}
               <p className="text-xs opacity-50 mt-2">
                 {new Date(m.createdAt).toLocaleString("de-DE")}
               </p>
@@ -146,7 +156,7 @@ export default function TicketDetail({ params }) {
         )}
       </div>
 
-      {/* ANTWORTFELD */}
+      {/* ANTWORT-FELD */}
       {ticket.status === "open" && (
         <div className="bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
           <h3 className="text-xl font-bold mb-4">Antworten</h3>
