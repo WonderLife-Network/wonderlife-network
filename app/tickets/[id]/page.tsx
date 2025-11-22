@@ -9,6 +9,7 @@ export default function TicketDetail({ params }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(true);
+  const [team, setTeam] = useState<any[]>([]);
 
   // Ticket laden
   async function loadTicket() {
@@ -20,8 +21,16 @@ export default function TicketDetail({ params }) {
     setLoading(false);
   }
 
+  // Team laden
+  async function loadTeam() {
+    const res = await fetch("/api/team/list");
+    const data = await res.json();
+    setTeam(data.team);
+  }
+
   useEffect(() => {
     loadTicket();
+    loadTeam();
   }, []);
 
   // Nachricht senden
@@ -55,6 +64,17 @@ export default function TicketDetail({ params }) {
     const res = await fetch(`/api/tickets/${ticketId}/priority`, {
       method: "POST",
       body: JSON.stringify({ priority: newPriority }),
+    });
+
+    const data = await res.json();
+    if (data.success) loadTicket();
+  }
+
+  // Ticket zuweisen
+  async function assignTicket(staffId: string) {
+    const res = await fetch(`/api/tickets/${ticketId}/assign`, {
+      method: "POST",
+      body: JSON.stringify({ staffId }),
     });
 
     const data = await res.json();
@@ -136,6 +156,25 @@ export default function TicketDetail({ params }) {
         </select>
       </div>
 
+      {/* TICKET ZUWEISEN */}
+      <div className="mt-10 bg-[#0d0f18] border border-purple-600/30 rounded-xl p-6">
+        <h3 className="text-xl font-bold mb-3">Ticket zuweisen</h3>
+
+        <select
+          className="w-full p-3 bg-black/40 border border-purple-700/40 rounded-lg"
+          value={ticket.assignedTo || ""}
+          onChange={(e) => assignTicket(e.target.value)}
+        >
+          <option value="">Nicht zugewiesen</option>
+
+          {team.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.username} (#{t.id})
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* NACHRICHTEN */}
       <div className="space-y-4 my-10">
         {messages.length === 0 ? (
@@ -146,7 +185,9 @@ export default function TicketDetail({ params }) {
               key={m.id}
               className="p-4 bg-[#141726] border border-purple-600/20 rounded-xl"
             >
-              <p className="font-semibold mb-1">User #{m.authorId}</p>
+              <p className="font-semibold mb-1">
+                User #{m.authorId}
+              </p>
               {m.message && <p className="opacity-90">{m.message}</p>}
               <p className="text-xs opacity-50 mt-2">
                 {new Date(m.createdAt).toLocaleString("de-DE")}
